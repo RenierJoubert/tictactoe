@@ -5,8 +5,8 @@
 #include "board.h"
 using namespace std;
 
-// int / int -> int so 1/3 -> 0
-// returns move of a player position 1-9 in form [][]
+// Integer division in cpp is handy: int / int -> int so 1/3 -> 0
+// Returns move of a player position [1, 9] in form [][]
 std::pair<int, int> parseMove(int n) {
     int input = n - 1;
     int row = input / 3; // eg n = 5 -> 4/3 = 1 so row = 1
@@ -14,7 +14,7 @@ std::pair<int, int> parseMove(int n) {
     return std::make_pair(row, col);
 }
 
-// reverts a move [][] back into a position of 1-9 form
+// Reverts a move [][] back into a position of [1, 9] form
 int getPos(std::pair<int, int> move) {
     int row = move.first;
     int col = move.second;
@@ -23,7 +23,7 @@ int getPos(std::pair<int, int> move) {
 
 }
 
-// Takes a pos n, and returns a set of potential winning lines
+// Takes a pos n [1, 9] and returns a set of potential winning lines
 set<array<int, 3>> makeLines(int n) {
 
     set<array<int, 3>> lines;
@@ -75,8 +75,11 @@ set<array<int, 3>> makeLines(int n) {
     return lines;
 }
 
-// assume the moves to make the lines have been made
-// puts new lines into the players lines, unless the line is already in the opponents lines, then that line is removed from both players
+// Given the current player, a set of new winning lines, a set of dead lines, and the current line map:
+// updatePlayerLines deduces player and opponent, then iterates over the proposed new winning lines,
+// if a new line is in the opponents winning lines already, then that line is removed from the opponents lines,
+// not added to players lines, and added to the set of dead lines. Similarly, if the line is already dead then 
+// the same applies. Else, the winning line is put into players winning lines. 
 void updatePlayerLines(int player, set<array<int,3>> lines, set<array<int,3>>& dead_lines, unordered_map<int, set<array<int,3>>>& line_map) {
 
     int opponent;
@@ -105,7 +108,7 @@ void updatePlayerLines(int player, set<array<int,3>> lines, set<array<int,3>>& d
 
 }
 
-// prints set of winning lines to terminal
+// Prints set of lines to the terminal
 void printLines(set<array<int, 3>> lines) {
     
     set<array<int, 3>>::iterator itr;
@@ -121,16 +124,19 @@ void printLines(set<array<int, 3>> lines) {
     }
 }
 
-// takes player num, board, and terminal input 
-// then updates board with move if valid, else prompts again.\
-// requires pos is an integer in [1,9]: will add guards later
+// this function does a lot right now I should probably clean it up
+
+// given a player, a board state, a set of dead lines, and the current winning lines for each player:
+// playerMove first gets a pos 1-9 from the player, converts that to a move [][], then if that move
+// is a available, plays that move for player. After move is played, winning lines are created for that
+// move and the line map is updated with those lines.
 void playerMove(int player, int b[3][3], set<array<int,3>>& dead_lines, unordered_map<int, set<array<int, 3>>>& line_map) {
     
     // get pos from player
     int pos{};
     std::cin >> pos;
     
-    // check 1 <= pos <= 9
+    // check pos in [1, 9]
     if ((pos > 9) || (pos < 1)) {
         std::cout << "Invalid, choose again!";
         playerMove(player, b, dead_lines, line_map);
@@ -148,6 +154,7 @@ void playerMove(int player, int b[3][3], set<array<int,3>>& dead_lines, unordere
         playerMove(player, b, dead_lines, line_map);
     }
 
+    // Get winning lines for move and update player lines
     set<array<int, 3>> new_lines = makeLines(pos);
     updatePlayerLines(player, new_lines, dead_lines, line_map);
 
