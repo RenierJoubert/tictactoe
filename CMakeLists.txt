@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(tictac
     src/main.cpp
     src/board.cpp
+    src/player.cpp
 )
 
 target_compile_options(tictac PRIVATE -Wall -Wextra -Wpedantic)

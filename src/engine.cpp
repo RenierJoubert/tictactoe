@@ -1,7 +1,2 @@
-int nextMove(int b[]) {
 
-    
-
-
-}
 
