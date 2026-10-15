@@ -8,6 +8,11 @@ using namespace std;
 // player1 = p1 = 1
 // player2 = p2 = 2
 
+// IDEA: Infinite tic tac toe -> the first game is the "center"
+// each move spawns a new game relative to the first center game
+// so a top right move in the center game spawns a game top-right
+// of the center. The first player to win 3 games in a row wins.
+
 
 // takes a player num and board state, inputs player num's move and returns true if game was won on player num's turn.
 // bool playerMove(int player, int board[])
@@ -38,35 +43,6 @@ int getPos(std::pair<int, int> move) {
 
 }
 
-
-// takes player num, board, and terminal input 
-// then updates board with move if valid, else prompts again.\
-// requires pos is an integer in [1,9]: will add guards later
-void playerMove(int player, int b[3][3]) {
-    
-    // get pos from player
-    int pos{};
-    std::cin >> pos;
-    
-    // check 1 <= pos <= 9
-    if ((pos > 9) || (pos < 1)) {
-        std::cout << "Invalid, choose again!";
-        playerMove(player, b);
-    }
-
-    // convert pos to move
-    std::pair move = parseMove(pos);
-    
-    // update board if move valid, else prompt again
-    // maybe use memoisation to see if move has been played instead of rechecking board
-    if (b[move.first][move.second] == 0) {
-        b[move.first][move.second] = player;
-    } else {
-        std::cout << "Ivalid, choose again!";
-        playerMove(player, b);
-    }
-
-}
 
 // what if I made lines a hash map so you could see the lines each player has with a number??
 // should do this
@@ -122,6 +98,37 @@ set<array<int, 3>> makeLines(int n) {
 
     return lines;
 }
+// assume the moves to make the lines have been made
+// puts new lines into the players lines, unless the line is already in the opponents lines, then that line is removed from both players
+void updatePlayerLines(int player, set<array<int,3>> lines, set<array<int,3>>& dead_lines, unordered_map<int, set<array<int,3>>>& line_map) {
+
+    int opponent;
+
+    if (player == 1) {
+        opponent = 2;
+    } else {
+        opponent = 1;
+    }
+
+    set<array<int, 3>>::iterator itr;
+    set<array<int, 3>>& player_lines = line_map.at(player);
+    set<array<int, 3>>& opponent_lines = line_map.at(opponent);
+
+    for (itr = lines.begin(); itr != lines.end(); itr++) {
+
+        array<int, 3> line = *itr;
+
+        if (opponent_lines.contains(line) || dead_lines.contains(line)) { // the opponent has played a move in that line
+            opponent_lines.erase(line);
+            dead_lines.insert(line);
+        } else { // the opponent hasnt played a move in that line
+            player_lines.insert(line);
+        }
+    }    
+
+}
+
+
 
 // prints set of winning lines to terminal
 void printLines(set<array<int, 3>> lines) {
@@ -139,6 +146,37 @@ void printLines(set<array<int, 3>> lines) {
     }
 }
 
+// takes player num, board, and terminal input 
+// then updates board with move if valid, else prompts again.\
+// requires pos is an integer in [1,9]: will add guards later
+void playerMove(int player, int b[3][3], set<array<int,3>>& dead_lines, unordered_map<int, set<array<int, 3>>>& line_map) {
+    
+    // get pos from player
+    int pos{};
+    std::cin >> pos;
+    
+    // check 1 <= pos <= 9
+    if ((pos > 9) || (pos < 1)) {
+        std::cout << "Invalid, choose again!";
+        playerMove(player, b, dead_lines, line_map);
+    }
+
+    // convert pos to move
+    std::pair move = parseMove(pos);
+    
+    // update board if move valid, else prompt again
+    // maybe use memoisation to see if move has been played instead of rechecking board !!
+    if (b[move.first][move.second] == 0) {
+        b[move.first][move.second] = player;
+    } else {
+        std::cout << "Ivalid, choose again!";
+        playerMove(player, b, dead_lines, line_map);
+    }
+
+    set<array<int, 3>> new_lines = makeLines(pos);
+    updatePlayerLines(player, new_lines, dead_lines, line_map);
+
+}
 
 
 // initializes the board and begins the game loop
@@ -149,6 +187,12 @@ int main()
 
     // maps player num to their winning lines
     unordered_map<int, set<array<int, 3>>> line_map;
+    line_map = {{1, {}}, {2, {}}};
+    
+    set<array<int, 3>> dead_lines;
+
+    set<array<int, 3>>& p1_lines = line_map.at(1);
+    set<array<int, 3>>& p2_lines = line_map.at(2);
 
     printBoard(board);
 
@@ -174,12 +218,14 @@ int main()
     for (int i = 0; i < 9; i++) {
         if (i % 2 == 0) {
             std::cout << "Player 1's Turn!";
-            playerMove(1, board);
+            playerMove(1, board, dead_lines, line_map);
             printBoard(board);
+            printLines(p1_lines);
         } else {
             std::cout << "Player 2's Turn!";
-            playerMove(2, board);
+            playerMove(2, board, dead_lines, line_map);
             printBoard(board);
+            printLines(p2_lines);
         }
     }
 
