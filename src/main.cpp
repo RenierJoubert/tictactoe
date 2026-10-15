@@ -1,99 +1,187 @@
+#include <array>
 #include <iostream>
+#include <set>
+#include <unordered_map>
+#include "board.h"
+using namespace std;
 
 // player1 = p1 = 1
 // player2 = p2 = 2
 
-// prints the 3 x 3 board to the terminal
-void printBoard(int b[])
-{
-    for (int i = 1; i < 10; i++)
-    {
-        if (i % 3 == 0)
-        {
-            std::cout << b[i - 1] << " \n";
-        }
-        else
-            std::cout << b[i - 1] << " ";
-    }
-    std::cout << "\n";
-}
-
-// win detection
-bool win(int b[])
-{
-
-    // row victory
-    for (int i = 0; i < 9; i += 3)
-    {
-        if ((b[i] == b[i + 1]) && b[i] != 0)
-        {
-            if (b[i] == b[i + 2])
-                return true;
-        }
-    }
-
-    // column victory
-    for (int i = 0; i < 9; i++)
-    {
-        if ((b[i] == b[i + 3]) && b[i] != 0)
-        {
-            if (b[i] == b[i + 6])
-                return true;
-        }
-    }
-
-    // diagonal victory
-    if ((b[0] == b[4]) && b[0] != 0)
-    {
-        if (b[0] == b[8])
-            return true;
-    }
-    if ((b[2] == b[4]) && b[2] != 0)
-    {
-        if (b[2] == b[6])
-            return true;
-    }
-
-    return false;
-}
 
 // takes a player num and board state, inputs player num's move and returns true if game was won on player num's turn.
-bool playerMove(int player, int board[])
-{
-    std::cout << "Player " << player << "'s Turn \n";
-    int p{};
-    std::cin >> p;
-    board[p - 1] = player;
-    printBoard(board);
-    return win(board);
+// bool playerMove(int player, int board[])
+// {
+//     std::cout << "Player " << player << "'s Turn \n";
+//     int p{};
+//     std::cin >> p;
+//     board[p - 1] = player;
+//     printBoard(board);
+//     return win(board);
+// }
+
+// int / int -> int so 1/3 -> 0
+// returns move of a player position 1-9 in form [][]
+std::pair<int, int> parseMove(int n) {
+    int input = n - 1;
+    int row = input / 3; // eg n = 5 -> 4/3 = 1 so row = 1
+    int col = input % 3; // eg n = 5 -> 4 % 3 = 2 so col = 1
+    return std::make_pair(row, col);
 }
+
+// reverts a move back into a position of 1-9 form
+int getPos(std::pair<int, int> move) {
+    int row = move.first;
+    int col = move.second;
+
+    return ((row*3) + 1) + col;
+
+}
+
+
+// takes player num, board, and terminal input 
+// then updates board with move if valid, else prompts again.\
+// requires pos is an integer in [1,9]: will add guards later
+void playerMove(int player, int b[3][3]) {
+    
+    // get pos from player
+    int pos{};
+    std::cin >> pos;
+    
+    // check 1 <= pos <= 9
+    if ((pos > 9) || (pos < 1)) {
+        std::cout << "Invalid, choose again!";
+        playerMove(player, b);
+    }
+
+    // convert pos to move
+    std::pair move = parseMove(pos);
+    
+    // update board if move valid, else prompt again
+    // maybe use memoisation to see if move has been played instead of rechecking board
+    if (b[move.first][move.second] == 0) {
+        b[move.first][move.second] = player;
+    } else {
+        std::cout << "Ivalid, choose again!";
+        playerMove(player, b);
+    }
+
+}
+
+// what if I made lines a hash map so you could see the lines each player has with a number??
+// should do this
+
+// Takes a pos n, and returns a set of winning lines
+set<array<int, 3>> makeLines(int n) {
+
+    set<array<int, 3>> lines;
+
+    int row = parseMove(n).first;
+    int col = parseMove(n).second;
+
+    // row line
+    array<int, 3> row_line;
+
+    for (int i = 0; i < 3; i++) {
+        std::pair<int, int> move;
+        int pos;
+        move = std::make_pair(row, i);
+        pos = getPos(move);
+        row_line[i] = pos;
+    }
+
+    lines.insert(row_line);
+
+    // col line
+    array<int, 3> col_line;
+
+    for (int i = 0; i < 3; i++) {
+        std::pair<int, int> move;
+        int pos;
+        move = std::make_pair(i, col);
+        pos = getPos(move);
+        col_line[i] = pos;
+    }
+
+    lines.insert(col_line);
+
+    // diagonal lines
+    // all approaches I found just seemed like more complicated hard coding
+    set<int> d1set = {1, 5, 9};
+    set<int> d2set = {3, 5, 7};
+    array<int, 3> d1line = {1, 5, 9};
+    array<int, 3> d2line = {3, 5, 7};
+
+    if (d1set.contains(n)) {
+        lines.insert(d1line);
+    }
+
+    if (d2set.contains(n)) {
+        lines.insert(d2line);
+    }
+
+    return lines;
+}
+
+// prints set of winning lines to terminal
+void printLines(set<array<int, 3>> lines) {
+    
+    set<array<int, 3>>::iterator itr;
+
+    for (itr = lines.begin(); itr != lines.end(); itr++) {
+
+        array<int, 3> line = *itr;
+
+        for (int i = 0; i < 3; i++){
+            std::cout << line[i] << ", ";
+        }
+        std::cout << "\n";
+    }
+}
+
+
 
 // initializes the board and begins the game loop
 int main()
 {
 
-    int board[9] = {};
+    int board[3][3] = { };
+
+    // maps player num to their winning lines
+    unordered_map<int, set<array<int, 3>>> line_map;
 
     printBoard(board);
 
-    for (int i = 0; i < 9; i++)
-    {
-        if (i % 2 == 0)
-        {
-            if (playerMove(1, board))
-            {
-                std::cout << "Player 1 Wins!! \n";
-                return 0;
-            }
-        }
-        else if (playerMove(2, board))
-        {
-            std::cout << "Player 2 Wins!! \n";
-            return 0;
+    // for (int i = 0; i < 9; i++)
+    // {
+    //     if (i % 2 == 0)
+    //     {
+    //         if (playerMove(1, board))
+    //         {
+    //             std::cout << "Player 1 Wins!! \n";
+    //             return 0;
+    //         }
+    //     }
+    //     else if (playerMove(2, board))
+    //     {
+    //         std::cout << "Player 2 Wins!! \n";
+    //         return 0;
+    //     }
+    // }
+
+    // std::cout << "Draw! \n";
+
+    for (int i = 0; i < 9; i++) {
+        if (i % 2 == 0) {
+            std::cout << "Player 1's Turn!";
+            playerMove(1, board);
+            printBoard(board);
+        } else {
+            std::cout << "Player 2's Turn!";
+            playerMove(2, board);
+            printBoard(board);
         }
     }
-
-    std::cout << "Draw! \n";
 
     return 0;
 }

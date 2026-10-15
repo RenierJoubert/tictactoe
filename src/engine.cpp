@@ -1,0 +1,7 @@
+int nextMove(int b[]) {
+
+    
+
+
+}
+
