@@ -1,4 +1,10 @@
 #pragma once
+
+#include <array>
+#include <set>
+#include <unordered_map>
+#include <utility>
+
 using namespace std;
 
 std::pair<int, int> parseMove(int n);
@@ -11,4 +17,6 @@ void updatePlayerLines(int player, set<array<int,3>> lines, set<array<int,3>>& d
 
 void printLines(set<array<int, 3>> lines);
 
-void playerMove(int player, int b[3][3], set<array<int,3>>& dead_lines, unordered_map<int, set<array<int, 3>>>& line_map);
+bool playerMove(int player, int b[3][3], set<array<int,3>>& dead_lines, unordered_map<int, set<array<int, 3>>>& line_map);
+
+bool checkWin(int b[3][3]);

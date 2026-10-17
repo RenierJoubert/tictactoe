@@ -12,6 +12,7 @@ add_executable(tictac
     src/main.cpp
     src/board.cpp
     src/player.cpp
+    src/engine.cpp
 )
 
 target_compile_options(tictac PRIVATE -Wall -Wextra -Wpedantic)
